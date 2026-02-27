@@ -6,6 +6,7 @@ import '../core/app_theme.dart';
 import '../models/stock.dart';
 import '../services/auth_service.dart';
 import '../services/stock_service.dart';
+import 'produtos_screen.dart';
 
 class EstoqueScreen extends StatefulWidget {
   const EstoqueScreen({super.key});
@@ -133,6 +134,17 @@ class _EstoqueScreenState extends State<EstoqueScreen> {
                     ),
                     const SizedBox(height: AppTheme.spacing2xl),
                     _LowStockSection(lowStock: _lowStock),
+                    const SizedBox(height: AppTheme.spacingLg),
+                    ShortcutCard(
+                      title: 'Produtos',
+                      subtitle: 'Listar, criar e editar produtos',
+                      icon: Icons.inventory,
+                      onTap: () => Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (_) => const ProdutosScreen(),
+                        ),
+                      ),
+                    ),
                   ],
                 ),
               ),

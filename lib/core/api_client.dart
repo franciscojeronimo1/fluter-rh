@@ -62,4 +62,9 @@ class ApiClient {
       body: body != null ? jsonEncode(body) : null,
     );
   }
+
+  Future<http.Response> delete(String path, {required String token}) async {
+    final uri = Uri.parse(_buildUri(path));
+    return http.delete(uri, headers: headersWithAuth(token));
+  }
 }
