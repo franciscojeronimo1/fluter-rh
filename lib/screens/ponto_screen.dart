@@ -38,14 +38,17 @@ class _PontoScreenState extends State<PontoScreen> {
         '${now.day.toString().padLeft(2, '0')}/${now.month.toString().padLeft(2, '0')}/${now.year}';
   }
 
-  String get _dateParam {
-    final now = DateTime.now();
-    return '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
-  }
-
   Future<void> _load() async {
     final token = await _authService.getToken();
-    if (token == null) return;
+    if (token == null) {
+      if (mounted) {
+        setState(() {
+          _loading = false;
+          _error = 'Sessão expirada. Faça login novamente.';
+        });
+      }
+      return;
+    }
 
     setState(() {
       _loading = true;
@@ -53,11 +56,12 @@ class _PontoScreenState extends State<PontoScreen> {
     });
 
     try {
-      final summary = await _timeService.getSummary(token, date: _dateParam);
-      final listRes = await _timeService.getRecords(token, date: _dateParam);
+      // Sem date = backend usa "hoje" do servidor — evita mismatch de timezone
+      final summary = await _timeService.getSummary(token);
+      final listRes = await _timeService.getRecords(token);
       if (mounted) {
         setState(() {
-          _summary = summary ?? _summary;
+          _summary = listRes?.summary ?? summary ?? _summary;
           _records = listRes?.records ?? [];
           _loading = false;
         });
@@ -74,7 +78,12 @@ class _PontoScreenState extends State<PontoScreen> {
 
   Future<void> _start() async {
     final token = await _authService.getToken();
-    if (token == null) return;
+    if (token == null) {
+      if (mounted) {
+        setState(() => _error = 'Sessão expirada. Faça login novamente.');
+      }
+      return;
+    }
 
     setState(() {
       _actionLoading = true;
@@ -85,15 +94,24 @@ class _PontoScreenState extends State<PontoScreen> {
       await _timeService.start(token);
       if (mounted) await _load();
     } catch (e) {
-      if (mounted) setState(() => _error = e.toString().replaceFirst('Exception: ', ''));
+      if (mounted) {
+        setState(() => _error = e.toString().replaceFirst('Exception: ', ''));
+      }
     } finally {
-      if (mounted) setState(() => _actionLoading = false);
+      if (mounted) {
+        setState(() => _actionLoading = false);
+      }
     }
   }
 
   Future<void> _stop() async {
     final token = await _authService.getToken();
-    if (token == null) return;
+    if (token == null) {
+      if (mounted) {
+        setState(() => _error = 'Sessão expirada. Faça login novamente.');
+      }
+      return;
+    }
 
     setState(() {
       _actionLoading = true;
@@ -104,13 +122,25 @@ class _PontoScreenState extends State<PontoScreen> {
       await _timeService.stop(token);
       if (mounted) await _load();
     } catch (e) {
-      if (mounted) setState(() => _error = e.toString().replaceFirst('Exception: ', ''));
+      if (mounted) {
+        setState(() => _error = e.toString().replaceFirst('Exception: ', ''));
+      }
     } finally {
-      if (mounted) setState(() => _actionLoading = false);
+      if (mounted) {
+        setState(() => _actionLoading = false);
+      }
     }
   }
 
-  bool get _isStarted => _summary?.status == 'started';
+  bool get _isStarted {
+    if (_summary?.status == 'started') return true;
+    // Fallback: último registro é START = estamos trabalhando (evita mismatch de timezone)
+    if (_records.isNotEmpty) {
+      final last = _records.last;
+      return last.type == 'START';
+    }
+    return false;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -231,11 +261,35 @@ class _SummaryCard extends StatelessWidget {
     return '${m}min';
   }
 
+  /// Converte HH:mm em UTC para horário local (backend envia períodos em UTC).
+  String _utcToLocal(String date, String timeStr) {
+    if (timeStr.isEmpty) return '—';
+    try {
+      final parts = timeStr.split(':');
+      final h = parts.isNotEmpty ? int.tryParse(parts[0]) ?? 0 : 0;
+      final m = parts.length > 1 ? int.tryParse(parts[1]) ?? 0 : 0;
+      final dateParts = date.split('-');
+      if (dateParts.length < 3) return timeStr;
+      final dt = DateTime.utc(
+        int.parse(dateParts[0]),
+        int.parse(dateParts[1]),
+        int.parse(dateParts[2]),
+        h,
+        m,
+      );
+      final local = dt.toLocal();
+      return '${local.hour.toString().padLeft(2, '0')}:${local.minute.toString().padLeft(2, '0')}';
+    } catch (_) {
+      return timeStr;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final totalHours = summary?.totalHours ?? '0:00';
     final totalMinutes = summary?.totalMinutes ?? 0;
     final periods = summary?.periods ?? [];
+    final date = summary?.date ?? '';
 
     return AppCard(
       child: Column(
@@ -256,13 +310,17 @@ class _SummaryCard extends StatelessWidget {
             const SizedBox(height: AppTheme.spacingLg),
             const Divider(),
             const SizedBox(height: AppTheme.spacingSm),
-            ...periods.map((p) => Padding(
-                  padding: const EdgeInsets.only(bottom: 6),
-                  child: Text(
-                    '${p.start} – ${p.stop}  ·  ${_formatMinutes(p.minutes)}',
-                    style: AppTheme.bodySmall.copyWith(color: AppColors.textSecondary),
-                  ),
-                )),
+            ...periods.map((p) {
+              final startLocal = _utcToLocal(date, p.start);
+              final stopLocal = p.stop.isEmpty ? '—' : _utcToLocal(date, p.stop);
+              return Padding(
+                padding: const EdgeInsets.only(bottom: 6),
+                child: Text(
+                  '$startLocal – $stopLocal  ·  ${_formatMinutes(p.minutes)}',
+                  style: AppTheme.bodySmall.copyWith(color: AppColors.textSecondary),
+                ),
+              );
+            }),
           ],
         ],
       ),
@@ -277,7 +335,8 @@ class _RecordsList extends StatelessWidget {
 
   String _formatTimestamp(String iso) {
     try {
-      final dt = DateTime.parse(iso);
+      // Backend envia UTC (ex: 2025-02-27T01:46:26.000Z) — converte para horário local
+      final dt = DateTime.parse(iso).toLocal();
       return '${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}:${dt.second.toString().padLeft(2, '0')}';
     } catch (_) {
       return iso;

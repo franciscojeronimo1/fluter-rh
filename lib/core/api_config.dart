@@ -1,3 +1,6 @@
 /// Configuração da API backend.
-/// Para desenvolvimento local use: 'http://192.168.2.102:3333'
+///
+/// Se o backend usar um prefixo (ex: /api), inclua em kBasePath.
+/// Exemplo: kBasePath = '/api' → chamadas vão para baseUrl/api/time-records/start
 const String kBaseUrl = 'https://backendrh-gamma.vercel.app';
+const String kBasePath = ''; // Use '/api' se o backend exigir

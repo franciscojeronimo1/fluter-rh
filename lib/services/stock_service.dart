@@ -22,13 +22,17 @@ class StockService {
 
   /// GET /stock/low-stock
   Future<LowStockResponse?> getLowStock(String token, {int page = 1, int limit = 20}) async {
-    final res = await _client.get(
-      '/stock/low-stock?page=$page&limit=$limit',
-      token: token,
-    );
-    if (res.statusCode != 200) return null;
-    final data = jsonDecode(res.body) as Map<String, dynamic>;
-    return LowStockResponse.fromJson(data);
+    try {
+      final res = await _client.get(
+        '/stock/low-stock?page=$page&limit=$limit',
+        token: token,
+      );
+      if (res.statusCode != 200) return null;
+      final data = jsonDecode(res.body) as Map<String, dynamic>;
+      return LowStockResponse.fromJson(data);
+    } catch (_) {
+      return null;
+    }
   }
 
   /// GET /stock/current — para contagem total de produtos
@@ -38,14 +42,18 @@ class StockService {
     int page = 1,
     int limit = 100,
   }) async {
-    var path = '/stock/current?page=$page&limit=$limit';
-    if (category != null && category.isNotEmpty) {
-      path += '&category=$category';
+    try {
+      var path = '/stock/current?page=$page&limit=$limit';
+      if (category != null && category.isNotEmpty) {
+        path += '&category=$category';
+      }
+      final res = await _client.get(path, token: token);
+      if (res.statusCode != 200) return null;
+      final data = jsonDecode(res.body) as Map<String, dynamic>;
+      return CurrentStockResponse.fromJson(data);
+    } catch (_) {
+      return null;
     }
-    final res = await _client.get(path, token: token);
-    if (res.statusCode != 200) return null;
-    final data = jsonDecode(res.body) as Map<String, dynamic>;
-    return CurrentStockResponse.fromJson(data);
   }
 
   /// GET /stock/daily-usage?date=YYYY-MM-DD — pode não existir em todos os backends

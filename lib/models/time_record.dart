@@ -44,7 +44,8 @@ class TimeRecordUser {
   final String email;
 }
 
-/// Período (entrada–saída)
+/// Período (entrada–saída).
+/// [stop] pode ser vazio quando o período ainda está em andamento.
 class TimePeriod {
   TimePeriod({
     required this.start,
@@ -55,13 +56,13 @@ class TimePeriod {
   factory TimePeriod.fromJson(Map<String, dynamic> json) {
     return TimePeriod(
       start: json['start'] as String? ?? '',
-      stop: json['stop'] as String? ?? '',
+      stop: json['stop']?.toString() ?? '', // null quando em andamento
       minutes: (json['minutes'] as num?)?.toInt() ?? 0,
     );
   }
 
   final String start; // "HH:mm"
-  final String stop;
+  final String stop; // "HH:mm" ou "" quando em andamento
   final int minutes;
 }
 
@@ -83,8 +84,9 @@ class TimeSummary {
               ?.map((e) => TimePeriod.fromJson(e as Map<String, dynamic>))
               .toList() ??
           [],
-      totalMinutes: (json['totalMinutes'] as num?)?.toInt() ?? 0,
-      totalHours: json['totalHours'] as String? ?? '0:00',
+      totalMinutes: (json['totalMinutes'] as num?)?.toInt() ??
+          (json['total_minutes'] as num?)?.toInt() ?? 0,
+      totalHours: (json['totalHours'] ?? json['total_hours']) as String? ?? '0:00',
       status: json['status'] as String? ?? 'stopped',
     );
   }
