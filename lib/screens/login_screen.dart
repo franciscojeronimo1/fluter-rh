@@ -1,21 +1,12 @@
 import 'package:flutter/material.dart';
 
+import '../components/components.dart';
+import '../core/app_colors.dart';
+import '../core/app_theme.dart';
 import '../services/auth_service.dart';
 
-/// Cores do layout Sistema CGS
-class AppColors {
-  static const Color primary = Color(0xFF2563EB);
-  static const Color textPrimary = Color(0xFF1F2937);
-  static const Color textSecondary = Color(0xFF6B7280);
-  static const Color border = Color(0xFFD1D5DB);
-  static const Color background = Color(0xFFFAFAFA);
-}
-
 class LoginScreen extends StatefulWidget {
-  const LoginScreen({
-    super.key,
-    required this.onLoginSuccess,
-  });
+  const LoginScreen({super.key, required this.onLoginSuccess});
 
   final VoidCallback onLoginSuccess;
 
@@ -56,9 +47,7 @@ class _LoginScreenState extends State<LoginScreen> {
         _emailController.text.trim(),
         _passwordController.text,
       );
-      if (mounted) {
-        widget.onLoginSuccess();
-      }
+      if (mounted) widget.onLoginSuccess();
     } catch (e) {
       if (mounted) {
         setState(() {
@@ -67,9 +56,7 @@ class _LoginScreenState extends State<LoginScreen> {
         });
       }
     } finally {
-      if (mounted && _isLoading) {
-        setState(() => _isLoading = false);
-      }
+      if (mounted && _isLoading) setState(() => _isLoading = false);
     }
   }
 
@@ -80,15 +67,29 @@ class _LoginScreenState extends State<LoginScreen> {
       body: SafeArea(
         child: Center(
           child: SingleChildScrollView(
-            padding: const EdgeInsets.symmetric(horizontal: 24),
+            padding: const EdgeInsets.symmetric(horizontal: AppTheme.spacing2xl),
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                _buildHeader(),
-                const SizedBox(height: 32),
-                _buildLoginCard(),
+                _LoginHeader(),
+                const SizedBox(height: AppTheme.spacing4xl),
+                _LoginForm(
+                  formKey: _formKey,
+                  emailController: _emailController,
+                  passwordController: _passwordController,
+                  obscurePassword: _obscurePassword,
+                  onTogglePassword: () => setState(() => _obscurePassword = !_obscurePassword),
+                  errorMessage: _errorMessage,
+                  isLoading: _isLoading,
+                  onSubmit: _submit,
+                ),
                 const SizedBox(height: 48),
-                _buildFooter(),
+                Text(
+                  '© 2026 Sistema CGS. Todos os direitos reservados.',
+                  style: AppTheme.captionSmall.copyWith(
+                    color: AppColors.textSecondary.withValues(alpha: 0.8),
+                  ),
+                ),
               ],
             ),
           ),
@@ -96,8 +97,11 @@ class _LoginScreenState extends State<LoginScreen> {
       ),
     );
   }
+}
 
-  Widget _buildHeader() {
+class _LoginHeader extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
     return Column(
       children: [
         Container(
@@ -105,7 +109,7 @@ class _LoginScreenState extends State<LoginScreen> {
           height: 72,
           decoration: BoxDecoration(
             color: AppColors.primary,
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(AppTheme.radiusLg),
             boxShadow: [
               BoxShadow(
                 color: AppColors.primary.withValues(alpha: 0.3),
@@ -114,106 +118,73 @@ class _LoginScreenState extends State<LoginScreen> {
               ),
             ],
           ),
-          child: const Icon(
-            Icons.business_rounded,
-            color: Colors.white,
-            size: 36,
-          ),
+          child: const Icon(Icons.business_rounded, color: Colors.white, size: 36),
         ),
-        const SizedBox(height: 16),
-        Text(
-          'Sistema CGS',
-          style: TextStyle(
-            fontSize: 28,
-            fontWeight: FontWeight.bold,
-            color: AppColors.textPrimary,
-          ),
-        ),
+        const SizedBox(height: AppTheme.spacingLg),
+        Text('Sistema CGS', style: AppTheme.heading1),
         const SizedBox(height: 6),
         Text(
           'Gerencie sua empresa de forma profissional',
-          style: TextStyle(
-            fontSize: 15,
-            color: AppColors.textSecondary,
-          ),
+          style: AppTheme.body.copyWith(color: AppColors.textSecondary),
         ),
       ],
     );
   }
+}
 
-  Widget _buildLoginCard() {
+class _LoginForm extends StatelessWidget {
+  const _LoginForm({
+    required this.formKey,
+    required this.emailController,
+    required this.passwordController,
+    required this.obscurePassword,
+    required this.onTogglePassword,
+    this.errorMessage,
+    required this.isLoading,
+    required this.onSubmit,
+  });
+
+  final GlobalKey<FormState> formKey;
+  final TextEditingController emailController;
+  final TextEditingController passwordController;
+  final bool obscurePassword;
+  final VoidCallback onTogglePassword;
+  final String? errorMessage;
+  final bool isLoading;
+  final VoidCallback onSubmit;
+
+  @override
+  Widget build(BuildContext context) {
     return Container(
       width: double.infinity,
       constraints: const BoxConstraints(maxWidth: 420),
-      padding: const EdgeInsets.all(32),
+      padding: const EdgeInsets.all(AppTheme.spacing4xl),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.06),
-            blurRadius: 20,
-            offset: const Offset(0, 8),
-          ),
-        ],
+        color: AppColors.cardBackground,
+        borderRadius: BorderRadius.circular(AppTheme.radiusXl),
+        boxShadow: AppTheme.cardShadowLarge,
       ),
       child: Form(
-        key: _formKey,
+        key: formKey,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              'Entrar na sua conta',
-              style: TextStyle(
-                fontSize: 22,
-                fontWeight: FontWeight.bold,
-                color: AppColors.textPrimary,
-              ),
-            ),
+            Text('Entrar na sua conta', style: AppTheme.heading3),
             const SizedBox(height: 6),
             Text(
               'Digite suas credenciais para acessar o sistema',
-              style: TextStyle(
-                fontSize: 14,
-                color: AppColors.textSecondary,
-              ),
+              style: AppTheme.bodySmall.copyWith(color: AppColors.textSecondary),
             ),
-            const SizedBox(height: 28),
-            Text(
-              'Email',
-              style: TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.w500,
-                color: AppColors.textPrimary,
-              ),
-            ),
-            const SizedBox(height: 8),
+            const SizedBox(height: AppTheme.spacing3xl),
+            Text('Email', style: AppTheme.bodySmall.copyWith(fontWeight: FontWeight.w500)),
+            const SizedBox(height: AppTheme.spacingSm),
             TextFormField(
-              controller: _emailController,
+              controller: emailController,
               keyboardType: TextInputType.emailAddress,
               autocorrect: false,
-              decoration: InputDecoration(
+              decoration: AppTheme.inputDecoration(
                 hintText: 'seu@email.com',
-                hintStyle: TextStyle(color: AppColors.textSecondary.withValues(alpha: 0.7)),
-                prefixIcon: Icon(Icons.mail_outline, color: AppColors.textSecondary, size: 22),
-                filled: true,
-                fillColor: Colors.white,
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(10),
-                  borderSide: const BorderSide(color: AppColors.border),
-                ),
-                enabledBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(10),
-                  borderSide: const BorderSide(color: AppColors.border),
-                ),
-                focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(10),
-                  borderSide: const BorderSide(color: AppColors.primary, width: 2),
-                ),
-                errorBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(10),
-                  borderSide: const BorderSide(color: Colors.red),
-                ),
+                prefixIcon: Icons.mail_outline,
               ),
               validator: (v) {
                 if (v == null || v.trim().isEmpty) return 'Informe o email';
@@ -221,48 +192,22 @@ class _LoginScreenState extends State<LoginScreen> {
                 return null;
               },
             ),
-            const SizedBox(height: 20),
-            Text(
-              'Senha',
-              style: TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.w500,
-                color: AppColors.textPrimary,
-              ),
-            ),
-            const SizedBox(height: 8),
+            const SizedBox(height: AppTheme.spacingXl),
+            Text('Senha', style: AppTheme.bodySmall.copyWith(fontWeight: FontWeight.w500)),
+            const SizedBox(height: AppTheme.spacingSm),
             TextFormField(
-              controller: _passwordController,
-              obscureText: _obscurePassword,
-              decoration: InputDecoration(
+              controller: passwordController,
+              obscureText: obscurePassword,
+              decoration: AppTheme.inputDecoration(
                 hintText: '••••••••',
-                hintStyle: TextStyle(color: AppColors.textSecondary.withValues(alpha: 0.7)),
-                prefixIcon: Icon(Icons.lock_outline, color: AppColors.textSecondary, size: 22),
+                prefixIcon: Icons.lock_outline,
                 suffixIcon: IconButton(
                   icon: Icon(
-                    _obscurePassword ? Icons.visibility_off_outlined : Icons.visibility_outlined,
+                    obscurePassword ? Icons.visibility_off_outlined : Icons.visibility_outlined,
                     color: AppColors.textSecondary,
                     size: 22,
                   ),
-                  onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
-                ),
-                filled: true,
-                fillColor: Colors.white,
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(10),
-                  borderSide: const BorderSide(color: AppColors.border),
-                ),
-                enabledBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(10),
-                  borderSide: const BorderSide(color: AppColors.border),
-                ),
-                focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(10),
-                  borderSide: const BorderSide(color: AppColors.primary, width: 2),
-                ),
-                errorBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(10),
-                  borderSide: const BorderSide(color: Colors.red),
+                  onPressed: onTogglePassword,
                 ),
               ),
               validator: (v) {
@@ -270,43 +215,24 @@ class _LoginScreenState extends State<LoginScreen> {
                 return null;
               },
             ),
-            if (_errorMessage != null) ...[
-              const SizedBox(height: 16),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                decoration: BoxDecoration(
-                  color: Colors.red.shade50,
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: Colors.red.shade200),
-                ),
-                child: Row(
-                  children: [
-                    Icon(Icons.error_outline, color: Colors.red.shade700, size: 20),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        _errorMessage!,
-                        style: TextStyle(color: Colors.red.shade800, fontSize: 13),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
+            if (errorMessage != null) ...[
+              const SizedBox(height: AppTheme.spacingLg),
+              ErrorBanner(message: errorMessage!),
             ],
-            const SizedBox(height: 28),
+            const SizedBox(height: AppTheme.spacing3xl),
             SizedBox(
               width: double.infinity,
               height: 50,
               child: FilledButton(
-                onPressed: _isLoading ? null : _submit,
+                onPressed: isLoading ? null : onSubmit,
                 style: FilledButton.styleFrom(
                   backgroundColor: AppColors.primary,
                   foregroundColor: Colors.white,
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10),
+                    borderRadius: BorderRadius.circular(AppTheme.radiusMd),
                   ),
                 ),
-                child: _isLoading
+                child: isLoading
                     ? const SizedBox(
                         width: 24,
                         height: 24,
@@ -318,28 +244,15 @@ class _LoginScreenState extends State<LoginScreen> {
                     : const Text('Entrar', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 16)),
               ),
             ),
-            const SizedBox(height: 20),
+            const SizedBox(height: AppTheme.spacingXl),
             Center(
               child: Text(
                 'Sistema de gestão empresarial',
-                style: TextStyle(
-                  fontSize: 13,
-                  color: AppColors.textSecondary,
-                ),
+                style: AppTheme.caption,
               ),
             ),
           ],
         ),
-      ),
-    );
-  }
-
-  Widget _buildFooter() {
-    return Text(
-      '© 2026 Sistema CGS. Todos os direitos reservados.',
-      style: TextStyle(
-        fontSize: 12,
-        color: AppColors.textSecondary.withValues(alpha: 0.8),
       ),
     );
   }
