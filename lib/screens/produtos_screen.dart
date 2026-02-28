@@ -255,6 +255,60 @@ class _ProdutosScreenState extends State<ProdutosScreen> {
     );
   }
 
+  void _showPagePicker() {
+    final p = _pagination!;
+    final controller = TextEditingController(text: '${p.page}');
+    showDialog<void>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Ir para página'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Digite o número da página (1 a ${p.totalPages})',
+              style: AppTheme.bodySmall,
+            ),
+            const SizedBox(height: AppTheme.spacingMd),
+            TextField(
+              controller: controller,
+              decoration: AppTheme.inputDecoration(
+                hintText: 'Página',
+                prefixIcon: Icons.numbers,
+              ),
+              keyboardType: TextInputType.number,
+              autofocus: true,
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(),
+            child: const Text('Cancelar'),
+          ),
+          FilledButton(
+            onPressed: () {
+              final page = int.tryParse(controller.text);
+              if (page != null && page >= 1 && page <= p.totalPages) {
+                Navigator.of(ctx).pop();
+                setState(() => _page = page);
+                _load();
+              } else {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('Digite um número entre 1 e ${p.totalPages}'),
+                  ),
+                );
+              }
+            },
+            child: const Text('Ir'),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildPagination() {
     final p = _pagination!;
     return Container(
@@ -270,11 +324,17 @@ class _ProdutosScreenState extends State<ProdutosScreen> {
             icon: const Icon(Icons.chevron_left),
             onPressed: p.hasPrev ? () { setState(() => _page--); _load(); } : null,
           ),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: AppTheme.spacingMd),
-            child: Text(
-              'Página ${p.page} de ${p.totalPages}',
-              style: AppTheme.bodySmall,
+          GestureDetector(
+            onTap: _showPagePicker,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: AppTheme.spacingMd),
+              child: Text(
+                'Página ${p.page} de ${p.totalPages}',
+                style: AppTheme.bodySmall.copyWith(
+                  color: AppColors.primary,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
             ),
           ),
           IconButton(
