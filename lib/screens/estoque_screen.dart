@@ -6,7 +6,9 @@ import '../core/app_theme.dart';
 import '../models/stock.dart';
 import '../services/auth_service.dart';
 import '../services/stock_service.dart';
+import 'entrada_screen.dart';
 import 'produtos_screen.dart';
+import 'saida_screen.dart';
 
 class EstoqueScreen extends StatefulWidget {
   const EstoqueScreen({super.key});
@@ -144,6 +146,34 @@ class _EstoqueScreenState extends State<EstoqueScreen> {
                           builder: (_) => const ProdutosScreen(),
                         ),
                       ),
+                    ),
+                    const SizedBox(height: 10),
+                    ShortcutCard(
+                      title: 'Registrar Entrada',
+                      subtitle: 'Compra ou recebimento de produtos',
+                      icon: Icons.add_circle_outline,
+                      onTap: () async {
+                        final result = await Navigator.of(context).push<bool>(
+                          MaterialPageRoute(
+                            builder: (_) => const EntradaScreen(),
+                          ),
+                        );
+                        if (result == true && mounted) _load();
+                      },
+                    ),
+                    const SizedBox(height: 10),
+                    ShortcutCard(
+                      title: 'Registrar Saída',
+                      subtitle: 'Uso ou consumo de produtos',
+                      icon: Icons.remove_circle_outline,
+                      onTap: () async {
+                        final result = await Navigator.of(context).push<bool>(
+                          MaterialPageRoute(
+                            builder: (_) => const SaidaScreen(),
+                          ),
+                        );
+                        if (result == true && mounted) _load();
+                      },
                     ),
                   ],
                 ),

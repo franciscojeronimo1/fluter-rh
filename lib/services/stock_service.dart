@@ -67,4 +67,60 @@ class StockService {
       return null;
     }
   }
+
+  /// POST /stock/entries — registrar entrada (compra/recebimento)
+  Future<void> createEntry(
+    String token, {
+    required String productId,
+    required int quantity,
+    required double unitPrice,
+    String? supplierName,
+    String? supplierDoc,
+    String? invoiceNumber,
+    String? notes,
+  }) async {
+    final body = <String, dynamic>{
+      'productId': productId,
+      'quantity': quantity,
+      'unitPrice': unitPrice,
+    };
+    if (supplierName != null && supplierName.isNotEmpty) body['supplierName'] = supplierName;
+    if (supplierDoc != null && supplierDoc.isNotEmpty) body['supplierDoc'] = supplierDoc;
+    if (invoiceNumber != null && invoiceNumber.isNotEmpty) body['invoiceNumber'] = invoiceNumber;
+    if (notes != null && notes.isNotEmpty) body['notes'] = notes;
+
+    final res = await _client.post('/stock/entries', body: body, token: token);
+    if (res.statusCode != 200 && res.statusCode != 201) {
+      final data = jsonDecode(res.body);
+      throw Exception(data['message'] ?? 'Erro ao registrar entrada');
+    }
+  }
+
+  /// POST /stock/exits — registrar saída (uso/consumo)
+  Future<void> createExit(
+    String token, {
+    required String productId,
+    required int quantity,
+    double? unitPrice,
+    String? projectName,
+    String? clientName,
+    String? serviceType,
+    String? notes,
+  }) async {
+    final body = <String, dynamic>{
+      'productId': productId,
+      'quantity': quantity,
+    };
+    if (unitPrice != null && unitPrice > 0) body['unitPrice'] = unitPrice;
+    if (projectName != null && projectName.isNotEmpty) body['projectName'] = projectName;
+    if (clientName != null && clientName.isNotEmpty) body['clientName'] = clientName;
+    if (serviceType != null && serviceType.isNotEmpty) body['serviceType'] = serviceType;
+    if (notes != null && notes.isNotEmpty) body['notes'] = notes;
+
+    final res = await _client.post('/stock/exits', body: body, token: token);
+    if (res.statusCode != 200 && res.statusCode != 201) {
+      final data = jsonDecode(res.body);
+      throw Exception(data['message'] ?? 'Erro ao registrar saída');
+    }
+  }
 }
