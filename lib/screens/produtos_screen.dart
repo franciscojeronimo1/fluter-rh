@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
 import '../components/components.dart';
+import '../core/api_exceptions.dart';
 import '../core/app_colors.dart';
 import '../core/app_theme.dart';
 import '../models/category.dart';
@@ -72,6 +73,10 @@ class _ProdutosScreenState extends State<ProdutosScreen> {
       }
     } catch (e) {
       if (mounted) {
+        if (e is SubscriptionRequiredException) {
+          showUpgradeDialog(context);
+          return;
+        }
         setState(() {
           _error = e.toString().replaceFirst('Exception: ', '');
           _loading = false;

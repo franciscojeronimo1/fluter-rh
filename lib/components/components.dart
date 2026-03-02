@@ -4,6 +4,7 @@ library;
 export 'app_app_bar.dart';
 export 'app_card.dart';
 export 'empty_state.dart';
+export 'upgrade_dialog.dart';
 export 'error_banner.dart';
 export 'low_stock_item.dart';
 export 'section_title.dart';

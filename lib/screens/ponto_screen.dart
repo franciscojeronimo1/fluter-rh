@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../components/components.dart';
+import '../core/api_exceptions.dart';
 import '../core/app_colors.dart';
 import '../core/app_theme.dart';
 import '../models/time_record.dart';
@@ -68,6 +69,10 @@ class _PontoScreenState extends State<PontoScreen> {
       }
     } catch (e) {
       if (mounted) {
+        if (e is SubscriptionRequiredException) {
+          showUpgradeDialog(context);
+          return;
+        }
         setState(() {
           _error = e.toString().replaceFirst('Exception: ', '');
           _loading = false;
@@ -95,6 +100,10 @@ class _PontoScreenState extends State<PontoScreen> {
       if (mounted) await _load();
     } catch (e) {
       if (mounted) {
+        if (e is SubscriptionRequiredException) {
+          showUpgradeDialog(context);
+          return;
+        }
         setState(() => _error = e.toString().replaceFirst('Exception: ', ''));
       }
     } finally {
@@ -123,6 +132,10 @@ class _PontoScreenState extends State<PontoScreen> {
       if (mounted) await _load();
     } catch (e) {
       if (mounted) {
+        if (e is SubscriptionRequiredException) {
+          showUpgradeDialog(context);
+          return;
+        }
         setState(() => _error = e.toString().replaceFirst('Exception: ', ''));
       }
     } finally {

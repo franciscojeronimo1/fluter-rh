@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:fluter_rh/core/api_client.dart';
+import 'package:fluter_rh/core/api_exceptions.dart';
 import 'package:fluter_rh/models/stock.dart';
 
 class StockService {
@@ -15,7 +16,8 @@ class StockService {
       if (res.statusCode != 200) return null;
       final data = jsonDecode(res.body) as Map<String, dynamic>;
       return TotalValueResponse.fromJson(data);
-    } catch (_) {
+    } catch (e) {
+      if (e is SubscriptionRequiredException) rethrow;
       return null;
     }
   }
@@ -30,7 +32,8 @@ class StockService {
       if (res.statusCode != 200) return null;
       final data = jsonDecode(res.body) as Map<String, dynamic>;
       return LowStockResponse.fromJson(data);
-    } catch (_) {
+    } catch (e) {
+      if (e is SubscriptionRequiredException) rethrow;
       return null;
     }
   }
@@ -51,7 +54,8 @@ class StockService {
       if (res.statusCode != 200) return null;
       final data = jsonDecode(res.body) as Map<String, dynamic>;
       return CurrentStockResponse.fromJson(data);
-    } catch (_) {
+    } catch (e) {
+      if (e is SubscriptionRequiredException) rethrow;
       return null;
     }
   }
@@ -63,7 +67,8 @@ class StockService {
       if (res.statusCode != 200) return null;
       final data = jsonDecode(res.body) as Map<String, dynamic>;
       return DailyUsageResponse.fromJson(data);
-    } catch (_) {
+    } catch (e) {
+      if (e is SubscriptionRequiredException) rethrow;
       return null;
     }
   }

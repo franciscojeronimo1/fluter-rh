@@ -2,18 +2,22 @@ import 'dart:convert';
 
 import 'package:fluter_rh/core/api_client.dart';
 import 'package:fluter_rh/models/auth_response.dart';
+import 'package:fluter_rh/services/subscription_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 const String _keyToken = 'auth_token';
 const String _keyUser = 'auth_user';
+const String _keyIsPremium = 'auth_is_premium';
 
 class AuthService {
   AuthService({ApiClient? apiClient})
       : _client = apiClient ?? ApiClient();
 
   final ApiClient _client;
+  final SubscriptionService _subscriptionService = SubscriptionService();
 
   /// Realiza login e persiste token e usuário.
+  /// Busca assinatura e armazena isPremium.
   /// Lança [Exception] com mensagem do backend em caso de erro.
   Future<AuthResponse> login(String email, String password) async {
     final res = await _client.post(
@@ -40,6 +44,14 @@ class AuthService {
       'organizationId': auth.user.organizationId,
     }));
 
+    // Busca assinatura (rota FREE) e armazena isPremium
+    try {
+      final subscription = await _subscriptionService.getSubscription(auth.token);
+      await prefs.setBool(_keyIsPremium, subscription.isPremium);
+    } catch (_) {
+      await prefs.setBool(_keyIsPremium, false);
+    }
+
     return auth;
   }
 
@@ -58,11 +70,29 @@ class AuthService {
     return User.fromJson(map);
   }
 
-  /// Remove token e usuário (logout).
+  /// Remove token, usuário e assinatura (logout).
   Future<void> logout() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove(_keyToken);
     await prefs.remove(_keyUser);
+    await prefs.remove(_keyIsPremium);
+  }
+
+  /// Retorna se o plano atual é Premium (acesso a todas as rotas).
+  Future<bool> get isPremium async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getBool(_keyIsPremium) ?? false;
+  }
+
+  /// Atualiza o status da assinatura (útil após upgrade).
+  Future<void> refreshSubscription() async {
+    final token = await getToken();
+    if (token == null) return;
+    try {
+      final subscription = await _subscriptionService.getSubscription(token);
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setBool(_keyIsPremium, subscription.isPremium);
+    } catch (_) {}
   }
 
   /// Indica se há um token salvo (usuário logado).

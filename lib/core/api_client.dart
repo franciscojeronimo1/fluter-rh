@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 
 import 'api_config.dart';
+import 'api_exceptions.dart';
 
 /// Cliente HTTP para comunicação com o backend.
 /// Requisições autenticadas usam o header Authorization: Bearer {token}.
@@ -32,6 +33,19 @@ class ApiClient {
         'Authorization': 'Bearer $token',
       };
 
+  void _checkSubscriptionRequired(http.Response res) {
+    if (res.statusCode == 403) {
+      try {
+        final body = jsonDecode(res.body) as Map<String, dynamic>?;
+        if (body?['code'] == 'SUBSCRIPTION_REQUIRED') {
+          throw SubscriptionRequiredException();
+        }
+      } catch (e) {
+        if (e is SubscriptionRequiredException) rethrow;
+      }
+    }
+  }
+
   Future<http.Response> post(
     String path, {
     Map<String, dynamic>? body,
@@ -41,13 +55,17 @@ class ApiClient {
     final headers = token != null ? headersWithAuth(token) : _jsonHeaders;
     // POST sem body: envia '{}' — evita 500 em backends que esperam JSON parseável
     final bodyStr = body != null ? jsonEncode(body) : '{}';
-    return http.post(uri, headers: headers, body: bodyStr);
+    final res = await http.post(uri, headers: headers, body: bodyStr);
+    _checkSubscriptionRequired(res);
+    return res;
   }
 
   Future<http.Response> get(String path, {String? token}) async {
     final uri = Uri.parse(_buildUri(path));
     final headers = token != null ? headersWithAuth(token) : _jsonHeaders;
-    return http.get(uri, headers: headers);
+    final res = await http.get(uri, headers: headers);
+    _checkSubscriptionRequired(res);
+    return res;
   }
 
   Future<http.Response> put(
@@ -56,15 +74,19 @@ class ApiClient {
     required String token,
   }) async {
     final uri = Uri.parse(_buildUri(path));
-    return http.put(
+    final res = await http.put(
       uri,
       headers: headersWithAuth(token),
       body: body != null ? jsonEncode(body) : null,
     );
+    _checkSubscriptionRequired(res);
+    return res;
   }
 
   Future<http.Response> delete(String path, {required String token}) async {
     final uri = Uri.parse(_buildUri(path));
-    return http.delete(uri, headers: headersWithAuth(token));
+    final res = await http.delete(uri, headers: headersWithAuth(token));
+    _checkSubscriptionRequired(res);
+    return res;
   }
 }

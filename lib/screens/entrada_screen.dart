@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
+import '../components/components.dart';
+import '../core/api_exceptions.dart';
 import '../core/app_colors.dart';
 import '../core/app_theme.dart';
 import '../models/product.dart';
@@ -90,6 +92,11 @@ class _EntradaScreenState extends State<EntradaScreen> {
       }
     } catch (e) {
       if (mounted) {
+        if (e is SubscriptionRequiredException) {
+          setState(() => _loading = false);
+          showUpgradeDialog(context);
+          return;
+        }
         setState(() {
           _error = e.toString().replaceFirst('Exception: ', '');
           _loading = false;
@@ -153,6 +160,10 @@ class _EntradaScreenState extends State<EntradaScreen> {
       }
     } catch (e) {
       if (mounted) {
+        if (e is SubscriptionRequiredException) {
+          showUpgradeDialog(context);
+          return;
+        }
         setState(() {
           _saving = false;
           _error = e.toString().replaceFirst('Exception: ', '');
